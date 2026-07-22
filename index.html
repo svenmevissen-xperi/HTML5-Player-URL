@@ -46,9 +46,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@videojs/http-streaming@3.15.0/dist/videojs-http-streaming.min.js"></script>
 
   <script>
-    const DEFAULT_SRC = "https://ps-test-vod.cdn.vustreams.com/vizio-poc/dd6a03e2-d526-41c0-b679-7dddb73ad0bd/noscte-nodrm.ism/.mpd";
-    const params = new URLSearchParams(window.location.search);
-    const src = params.get("src") || DEFAULT_SRC;
+    const src = "https://ps-test-vod.cdn.vustreams.com/vizio-poc/dd6a03e2-d526-41c0-b679-7dddb73ad0bd/noscte-nodrm.ism/.mpd";
 
     document.getElementById("src-label").textContent = src;
 
