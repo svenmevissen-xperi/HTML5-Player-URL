@@ -1,34 +1,72 @@
-# HTML5 Player URL (DASH Verification)
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DASH Playback Verification</title>
 
-Simple single-page DASH player for TV/browser playback verification.
+  <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+    }
+    .wrap { width: min(1200px, 96vw); }
+    .title { margin: 0 0 12px; font-size: 18px; font-weight: 600; }
+    .video-js { width: 100%; aspect-ratio: 16 / 9; background: #000; }
+    .meta { margin-top: 10px; font-size: 12px; color: #bbb; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="title">DASH Stream Playback Verification</p>
 
-## Default stream
-The page is preconfigured to play:
+    <video
+      id="dash-player"
+      class="video-js vjs-default-skin"
+      controls
+      autoplay
+      muted
+      playsinline
+      preload="auto"
+    ></video>
 
-`https://ps-test-vod.cdn.vustreams.com/vizio-poc/dd6a03e2-d526-41c0-b679-7dddb73ad0bd/noscte-nodrm.ism/.mpd`
+    <div class="meta">Source: <span id="src-label"></span></div>
+  </div>
 
-## Optional URL override
-You can override the stream without editing code by appending `?src=`:
+  <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-eme@5/dist/videojs-contrib-eme.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-quality-levels@4/dist/videojs-contrib-quality-levels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@videojs/http-streaming@3.15.0/dist/videojs-http-streaming.min.js"></script>
 
-`https://<your-pages-url>/?src=https://example.com/stream.mpd`
+  <script>
+    const DEFAULT_SRC = "https://ps-test-vod.cdn.vustreams.com/vizio-poc/dd6a03e2-d526-41c0-b679-7dddb73ad0bd/noscte-nodrm.ism/.mpd";
+    const params = new URLSearchParams(window.location.search);
+    const src = params.get("src") || DEFAULT_SRC;
 
-## Publish with GitHub Pages
+    document.getElementById("src-label").textContent = src;
 
-1. Go to **Settings** in this repo.
-2. Open **Pages**.
-3. Under **Build and deployment**:
-   - **Source**: Deploy from a branch
-   - **Branch**: `main` (or your default branch), folder `/ (root)`
-4. Save and wait for deploy.
+    const player = videojs("dash-player", {
+      fluid: true,
+      liveui: true,
+      html5: { vhs: { overrideNative: true } }
+    });
 
-Your site URL will be:
+    player.src({ src, type: "application/dash+xml" });
 
-`https://svenmevissen-xperi.github.io/HTML5-Player-URL/`
+    player.ready(() => {
+      player.play().catch(() => {});
+    });
 
-## TV verification tips
-- Keep **autoplay + muted** enabled for best compatibility.
-- Ensure TV has outbound internet access to:
-  - GitHub Pages domain
-  - Video.js CDN domains
-  - Your DASH CDN domain
-- If playback fails, test the same URL in desktop Chrome first and check DevTools/network errors.
+    player.on("error", () => {
+      console.error("Playback error:", player.error());
+    });
+  </script>
+</body>
+</html>
