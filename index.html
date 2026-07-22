@@ -21,6 +21,7 @@
     .title { margin: 0 0 12px; font-size: 18px; font-weight: 600; }
     .video-js { width: 100%; aspect-ratio: 16 / 9; background: #000; }
     .meta { margin-top: 10px; font-size: 12px; color: #bbb; word-break: break-all; }
+    #log { margin-top: 10px; font: 12px/1.4 monospace; white-space: pre-wrap; color: #9ad; }
   </style>
 </head>
 <body>
@@ -38,6 +39,7 @@
     ></video>
 
     <div class="meta">Source: <span id="src-label"></span></div>
+    <div id="log"></div>
   </div>
 
   <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
@@ -47,23 +49,53 @@
 
   <script>
     const src = "https://ps-test-vod.cdn.vustreams.com/vizio-poc/dd6a03e2-d526-41c0-b679-7dddb73ad0bd/noscte-nodrm.ism/.mpd";
+    const logEl = document.getElementById("log");
+    const log = (...args) => {
+      const line = args.map(a => typeof a === "string" ? a : JSON.stringify(a)).join(" ");
+      console.log(...args);
+      logEl.textContent += line + "\n";
+    };
 
     document.getElementById("src-label").textContent = src;
 
     const player = videojs("dash-player", {
       fluid: true,
-      liveui: true,
-      html5: { vhs: { overrideNative: true } }
+      liveui: false,
+      html5: {
+        vhs: {
+          overrideNative: !videojs.browser.IS_SAFARI
+        }
+      }
+    });
+
+    if (player.tech_ && player.tech_.vhs && player.tech_.vhs.xhr) {
+      player.tech_.vhs.xhr.onRequest((options) => {
+        log("REQ", options && options.uri ? options.uri : options?.url || "unknown");
+        return options;
+      });
+      player.tech_.vhs.xhr.onResponse((req, err, res) => {
+        const url = req?.uri || req?.url || "unknown";
+        const status = res?.statusCode || "n/a";
+        log("RES", status, url, err ? `ERR:${err.message || err}` : "");
+      });
+    }
+
+    player.on("loadedmetadata", () => log("loadedmetadata"));
+    player.on("canplay", () => log("canplay"));
+    player.on("playing", () => log("playing"));
+    player.on("waiting", () => log("waiting"));
+    player.on("stalled", () => log("stalled"));
+
+    player.on("error", () => {
+      const e = player.error();
+      log("Playback error:", e);
+      if (e) log(`code=${e.code} message=${e.message}`);
     });
 
     player.src({ src, type: "application/dash+xml" });
 
     player.ready(() => {
-      player.play().catch(() => {});
-    });
-
-    player.on("error", () => {
-      console.error("Playback error:", player.error());
+      player.play().catch((err) => log("play() rejected:", err?.message || err));
     });
   </script>
 </body>
